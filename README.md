@@ -140,10 +140,10 @@ For detailed probe syntax and examples, see the [probe documentation](https://gi
 Platform Support
 --
 
-Linux and macOS are supported, each on x86_64 and ARM64, from the release archives of probe for each. Windows is not.
+Linux and macOS are supported, from the release archives of probe for each. Windows is not.
 
 - **Linux** (`ubuntu-latest`, `ubuntu-24.04-arm`): x86_64, ARM64
-- **macOS** (`macos-latest`, `macos-15-intel`): ARM64, x86_64
+- **macOS** (`macos-latest`): ARM64. On an Intel Mac the x86_64 archive is used, but it is not tested here.
 
 On macOS, probe can run what needs a Mac, such as [probe-ios](https://github.com/mozership/probe-ios) against an iOS simulator.
 
