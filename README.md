@@ -10,7 +10,7 @@ Features
 - **Automatic Download**: Automatically downloads and sets up the probe binary
 - **Checksum Verification**: Verifies the downloaded archive against the release's `checksums.txt` (SHA-256) before extracting it
 - **Archive Caching**: Caches the probe release archive via `actions/cache` (keyed by resolved version, OS, and arch) to skip re-downloads on subsequent runs; a restored archive is re-verified against the release's `checksums.txt` on every run and re-downloaded if it does not match
-- **Linux Support**: Runs on Ubuntu runners (x86_64 and ARM64)
+- **Linux and macOS Support**: Runs on Ubuntu and macOS runners (x86_64 and ARM64)
 - **Flexible Options**: Configurable verbose output and response time display
 - **Rich Testing**: Supports HTTP, SSH, Database, Browser, Shell, SMTP, and IMAP actions
 - **Rate Limit Safe**: Uses GitHub token for API calls to avoid rate limiting
@@ -140,9 +140,12 @@ For detailed probe syntax and examples, see the [probe documentation](https://gi
 Platform Support
 --
 
-Currently only Linux is supported.
+Linux and macOS are supported, each on x86_64 and ARM64, from the release archives of probe for each. Windows is not.
 
-- **Linux** (ubuntu-latest): x86_64, ARM64
+- **Linux** (`ubuntu-latest`, `ubuntu-24.04-arm`): x86_64, ARM64
+- **macOS** (`macos-latest`, `macos-15-intel`): ARM64, x86_64
+
+On macOS, probe can run what needs a Mac, such as [probe-ios](https://github.com/mozership/probe-ios) against an iOS simulator.
 
 Debugging
 --

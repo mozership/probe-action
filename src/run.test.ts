@@ -28,8 +28,22 @@ describe('detectPlatform', () => {
     })
   })
 
-  it('rejects non-linux platforms', () => {
-    expect(() => detectPlatform('darwin', 'arm64')).toThrow(/only Linux/)
+  it('maps arm64 to arm64 on macOS', () => {
+    expect(detectPlatform('darwin', 'arm64')).toEqual({
+      os: 'darwin',
+      arch: 'arm64',
+    })
+  })
+
+  it('maps x64 to x86_64 on macOS', () => {
+    expect(detectPlatform('darwin', 'x64')).toEqual({
+      os: 'darwin',
+      arch: 'x86_64',
+    })
+  })
+
+  it('rejects platforms other than Linux and macOS', () => {
+    expect(() => detectPlatform('win32', 'x64')).toThrow(/Only Linux and macOS/)
   })
 
   it('rejects unsupported architectures', () => {
