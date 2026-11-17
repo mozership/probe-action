@@ -26,3 +26,7 @@ updates:
       # with ncc, so major bumps break the build. Stay on the 5.x line.
       - dependency-name: "@actions/cache"
         update-types: ["version-update:semver-major"]
+      # The action runs on node24 (action.yml), so the types of Node stay on
+      # its major version and do not offer APIs the runtime lacks.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
