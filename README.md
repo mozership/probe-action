@@ -29,13 +29,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run probe tests
-        uses: mozership/probe-action@v1.3.0
+        uses: mozership/probe-action@v1.4.0
         with:
           path: 'tests/api-test.yml'
 
       # Multiple paths example
       - name: Run multiple probe tests
-        uses: mozership/probe-action@v1.3.0
+        uses: mozership/probe-action@v1.4.0
         with:
           paths: |
             tests/api-test.yml
@@ -45,7 +45,7 @@ jobs:
 
       # Working directory example
       - name: Run probe from specific directory
-        uses: mozership/probe-action@v1.3.0
+        uses: mozership/probe-action@v1.4.0
         with:
           path: 'workflow.yml'
           workdir: './tests'
@@ -82,7 +82,7 @@ Installing Probe Only
 With `install-only`, the action downloads and verifies probe, adds it to `PATH`, and runs no workflow. Later steps of the job run probe themselves, which is how to use a subcommand such as `probe check` or `probe manifest`:
 
 ```yaml
-- uses: mozership/probe-action@v1.3.0
+- uses: mozership/probe-action@v1.4.0
   with:
     install-only: true
     version: v1.23.0
@@ -153,7 +153,7 @@ Debugging
 Enable verbose output and response times for detailed information:
 
 ```yaml
-- uses: mozership/probe-action@v1.3.0
+- uses: mozership/probe-action@v1.4.0
   with:
     path: 'tests/debug-test.yml'
     options: '--verbose --rt'
