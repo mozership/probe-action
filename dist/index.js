@@ -51548,16 +51548,16 @@ const core = __importStar(__nccwpck_require__(37484));
 const exec = __importStar(__nccwpck_require__(95236));
 const tc = __importStar(__nccwpck_require__(33472));
 // Determine the OS and architecture in the naming scheme used by probe release
-// archives. Only Linux is supported for now.
+// archives, which are published for Linux and macOS, each on x86_64 and arm64.
 function detectPlatform(platform = os.platform(), arch = os.arch()) {
-    if (platform !== 'linux') {
-        throw new Error(`Currently only Linux is supported (detected OS: ${platform})`);
+    if (platform !== 'linux' && platform !== 'darwin') {
+        throw new Error(`Only Linux and macOS are supported (detected OS: ${platform})`);
     }
     switch (arch) {
         case 'x64':
-            return { os: 'linux', arch: 'x86_64' };
+            return { os: platform, arch: 'x86_64' };
         case 'arm64':
-            return { os: 'linux', arch: 'arm64' };
+            return { os: platform, arch: 'arm64' };
         default:
             throw new Error(`Unsupported architecture: ${arch} (supported: x86_64, arm64)`);
     }
