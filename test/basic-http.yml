@@ -7,5 +7,5 @@ jobs:
       - name: Test HTTP GET
         uses: http
         with:
-          get: https://www.google.com
+          get: http://127.0.0.1:8000/
         test: "res.code == 200"

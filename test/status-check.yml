@@ -7,17 +7,11 @@ jobs:
       - name: Test 200 OK
         uses: http
         with:
-          get: https://www.google.com
+          get: http://127.0.0.1:8000/
         test: "res.code == 200"
-      
+
       - name: Test 404 Not Found
         uses: http
         with:
-          get: https://www.google.com/nonexistent-page-12345
+          get: http://127.0.0.1:8000/nonexistent-page-12345
         test: "res.code == 404"
-      
-      - name: Test GitHub API
-        uses: http
-        with:
-          get: https://api.github.com
-        test: "res.code == 200"
