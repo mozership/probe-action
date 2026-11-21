@@ -66,7 +66,7 @@ jobs:
         uses: ./
         with:
           path: test/basic-http.yml
-          version: v0.20.1
+          version: v1.38.1
           cache: false
 
   test-install-only:
@@ -80,11 +80,11 @@ jobs:
         uses: ./
         with:
           install-only: true
-          version: v1.23.0
+          version: v1.38.1
 
       - name: Run probe from PATH
         run: |
-          probe --version | grep -F 1.23.0
+          probe --version | grep -F 1.38.1
           test "$(command -v probe)" = "$PROBE_PATH"
           probe manifest init mozership/probe-greet | grep -F 'name: greet'
         env:

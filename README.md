@@ -59,7 +59,7 @@ Inputs
 |-------|-------------|----------|---------|
 | `path` | Path to the probe workflow YAML file | No* | - |
 | `paths` | Multiple paths to workflow YAML files (newline-separated multiline string) | No* | - |
-| `version` | Version of probe to use (a release tag such as `v0.20.1`, or `latest`; a bare `0.20.1` is normalized to `v0.20.1`) | No | `latest` |
+| `version` | Version of probe to use (a release tag such as `v1.38.1`, or `latest`; a bare `1.38.1` is normalized to `v1.38.1`) | No | `latest` |
 | `options` | Command line options for probe (e.g., "--verbose --rt") | No | `` |
 | `workdir` | Working directory to change to before running probe | No | `` |
 | `install-only` | Install probe and add it to `PATH` without running a workflow (true/false/yes/1) | No | `false` |
@@ -85,7 +85,7 @@ With `install-only`, the action downloads and verifies probe, adds it to `PATH`,
 - uses: mozership/probe-action@v1.4.0
   with:
     install-only: true
-    version: v1.23.0
+    version: v1.38.1
 
 - run: probe check tests/api-test.yml
 ```

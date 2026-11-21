@@ -51067,7 +51067,7 @@ exports.resolveVersion = resolveVersion;
 const core = __importStar(__nccwpck_require__(37484));
 // Fallback used when "latest" cannot be resolved from the GitHub API
 // (e.g. rate limit, auth error, or network failure).
-exports.FALLBACK_VERSION = 'v0.20.1';
+exports.FALLBACK_VERSION = 'v1.38.1';
 // Normalize an action-debug style flag: true/1/yes (case-insensitive) => true.
 function normalizeBool(value) {
     const s = (value ?? '').trim().toLowerCase();
