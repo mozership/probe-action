@@ -1,0 +1,22 @@
+name: Serve test/www
+description: >-
+  Serves test/www over HTTP at http://127.0.0.1:8000 for the rest of the job,
+  which the workflows in test/ request. Requesting a site on the internet
+  instead fails whenever it limits the runner's address, as www.google.com
+  answers 429 and api.github.com 403.
+
+runs:
+  using: composite
+  steps:
+    - name: Start an HTTP server
+      shell: bash
+      run: |
+        nohup python3 -m http.server 8000 --bind 127.0.0.1 --directory test/www > "$RUNNER_TEMP/http-server.log" 2>&1 &
+        for _ in $(seq 50); do
+          if curl -fsS -o /dev/null http://127.0.0.1:8000/; then
+            exit 0
+          fi
+          sleep 0.2
+        done
+        cat "$RUNNER_TEMP/http-server.log"
+        exit 1
