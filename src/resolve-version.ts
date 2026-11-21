@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 
 // Fallback used when "latest" cannot be resolved from the GitHub API
 // (e.g. rate limit, auth error, or network failure).
-export const FALLBACK_VERSION = 'v0.20.1'
+export const FALLBACK_VERSION = 'v1.38.1'
 
 // Normalize an action-debug style flag: true/1/yes (case-insensitive) => true.
 export function normalizeBool(value: string | undefined): boolean {
