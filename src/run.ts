@@ -189,13 +189,56 @@ export async function ensureProbeBinary(opts: EnsureOptions): Promise<string> {
 // or, with install-only, install probe and run nothing. A missing path is an
 // error rather than an install, so that a job meant to run a workflow never
 // passes having run none.
-export function checkMode(paths: string[], installOnly: boolean): void {
-  if (installOnly && paths.length > 0) {
-    throw new Error("'install-only' cannot be used with 'path' or 'paths'")
+export function checkMode(
+  paths: string[],
+  beforeRun: BeforeRunCheck[],
+  installOnly: boolean,
+): void {
+  if (installOnly && (paths.length > 0 || beforeRun.length > 0)) {
+    throw new Error(
+      "'install-only' cannot be used with 'path', 'paths' or 'before-run'",
+    )
   }
   if (!installOnly && paths.length === 0) {
     throw new Error("Either 'path' or 'paths' input must be provided")
   }
+}
+
+// fmt only checks, since a CI run that rewrote the file would pass without
+// anyone seeing the change.
+const BEFORE_RUN_ARGS = {
+  check: ['check'],
+  fmt: ['fmt', '--check'],
+} as const
+
+export type BeforeRunCheck = keyof typeof BEFORE_RUN_ARGS
+
+function isBeforeRunCheck(name: string): name is BeforeRunCheck {
+  return Object.hasOwn(BEFORE_RUN_ARGS, name)
+}
+
+// Parse the before-run input, names separated by newlines or commas, into the
+// checks to run on each workflow file before running it.
+export function parseBeforeRun(input: string): BeforeRunCheck[] {
+  const names = input
+    .split(/[\r\n,]+/)
+    .map((name) => name.trim())
+    .filter((name) => name.length > 0)
+  for (const name of names) {
+    if (!isBeforeRunCheck(name)) {
+      throw new Error(
+        `Unknown 'before-run' value: ${name} (supported: ${Object.keys(BEFORE_RUN_ARGS).join(', ')})`,
+      )
+    }
+  }
+  return names as BeforeRunCheck[]
+}
+
+export function beforeRunArgs(
+  check: BeforeRunCheck,
+  workflow: string,
+): string[] {
+  return [...BEFORE_RUN_ARGS[check], workflow]
 }
 
 // Parse the path/paths inputs into a clean list of workflow file paths.
