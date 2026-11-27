@@ -13,6 +13,10 @@ inputs:
     description: 'Version of probe to use (default: latest)'
     required: false
     default: 'latest'
+  before-run:
+    description: 'Checks to run on each workflow file of path/paths before running any of them, separated by newlines or commas: check (probe check), fmt (probe fmt --check)'
+    required: false
+    default: ''
   options:
     description: 'Command line options for probe (e.g., "--verbose --rt")'
     required: false

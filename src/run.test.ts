@@ -4,9 +4,11 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  beforeRunArgs,
   checkMode,
   detectPlatform,
   ensureProbeBinary,
+  parseBeforeRun,
   parseChecksums,
   parsePaths,
   sha256File,
@@ -92,19 +94,74 @@ const HELLO_SHA256 =
 
 describe('checkMode', () => {
   it('accepts workflows to run', () => {
-    expect(() => checkMode(['a.yml'], false)).not.toThrow()
+    expect(() => checkMode(['a.yml'], [], false)).not.toThrow()
+  })
+
+  it('accepts checks before workflows', () => {
+    expect(() => checkMode(['a.yml'], ['check', 'fmt'], false)).not.toThrow()
   })
 
   it('accepts install-only without a workflow', () => {
-    expect(() => checkMode([], true)).not.toThrow()
+    expect(() => checkMode([], [], true)).not.toThrow()
   })
 
   it('rejects running nothing without install-only', () => {
-    expect(() => checkMode([], false)).toThrow(/'path' or 'paths'/)
+    expect(() => checkMode([], [], false)).toThrow(/'path' or 'paths'/)
+  })
+
+  it('rejects checks without a workflow to check', () => {
+    expect(() => checkMode([], ['check'], false)).toThrow(/'path' or 'paths'/)
   })
 
   it('rejects install-only with a workflow', () => {
-    expect(() => checkMode(['a.yml'], true)).toThrow(/install-only/)
+    expect(() => checkMode(['a.yml'], [], true)).toThrow(/install-only/)
+  })
+
+  it('rejects install-only with checks', () => {
+    expect(() => checkMode([], ['check'], true)).toThrow(/install-only/)
+  })
+})
+
+describe('parseBeforeRun', () => {
+  it('splits names on newlines', () => {
+    expect(parseBeforeRun('check\nfmt\n')).toEqual(['check', 'fmt'])
+  })
+
+  it('splits names on commas and trims whitespace', () => {
+    expect(parseBeforeRun(' check , fmt ')).toEqual(['check', 'fmt'])
+  })
+
+  it('handles CRLF line endings and empty lines', () => {
+    expect(parseBeforeRun('\r\ncheck\r\n\r\nfmt\r\n')).toEqual(['check', 'fmt'])
+  })
+
+  it('returns an empty array when nothing is provided', () => {
+    expect(parseBeforeRun('')).toEqual([])
+    expect(parseBeforeRun('  \n ')).toEqual([])
+  })
+
+  it('rejects an unknown name', () => {
+    expect(() => parseBeforeRun('check\nchek')).toThrow(
+      /Unknown 'before-run' value: chek \(supported: check, fmt\)/,
+    )
+  })
+
+  it('rejects a free-form command', () => {
+    expect(() => parseBeforeRun('fmt --check')).toThrow(/Unknown/)
+  })
+
+  it('rejects names inherited from Object.prototype', () => {
+    expect(() => parseBeforeRun('toString')).toThrow(/Unknown/)
+  })
+})
+
+describe('beforeRunArgs', () => {
+  it('runs check on the workflow', () => {
+    expect(beforeRunArgs('check', 'a.yml')).toEqual(['check', 'a.yml'])
+  })
+
+  it('runs fmt only to check the workflow', () => {
+    expect(beforeRunArgs('fmt', 'a.yml')).toEqual(['fmt', '--check', 'a.yml'])
   })
 })
 

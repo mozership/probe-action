@@ -10,12 +10,20 @@ import {
   resolveVersion,
   sanitizeVersion,
 } from './resolve-version'
-import { checkMode, detectPlatform, ensureProbeBinary, parsePaths } from './run'
+import {
+  beforeRunArgs,
+  checkMode,
+  detectPlatform,
+  ensureProbeBinary,
+  parseBeforeRun,
+  parsePaths,
+} from './run'
 
 export async function run(): Promise<void> {
   const pathInput = core.getInput('path')
   const pathsInput = core.getInput('paths')
   const versionInput = core.getInput('version') || 'latest'
+  const beforeRunInput = core.getInput('before-run')
   const options = core.getInput('options')
   const workdir = core.getInput('workdir')
   const installOnly = normalizeBool(core.getInput('install-only'))
@@ -23,9 +31,9 @@ export async function run(): Promise<void> {
   const cacheEnabled = core.getInput('cache') !== 'false'
   const token = core.getInput('github-token') || process.env.GITHUB_TOKEN
 
-  // Determine the workflow files to run.
   const paths = parsePaths(pathInput, pathsInput)
-  checkMode(paths, installOnly)
+  const beforeRun = parseBeforeRun(beforeRunInput)
+  checkMode(paths, beforeRun, installOnly)
 
   const platform = detectPlatform()
   if (debug) core.info(`Detected platform: ${platform.os}_${platform.arch}`)
@@ -81,24 +89,35 @@ export async function run(): Promise<void> {
   }
   if (debug && workdir) core.info(`Changed to working directory: ${cwd}`)
 
-  // probe options are passed through verbatim, split on whitespace.
-  const args = options.trim().length > 0 ? options.trim().split(/\s+/) : []
-
   for (const p of paths) {
     const workflow = path.isAbsolute(p) ? p : path.join(cwd, p)
     if (!fs.existsSync(workflow)) {
       throw new Error(`Workflow file not found: ${p}`)
     }
+  }
 
+  const env = { ...process.env, FORCE_COLOR: '1' }
+
+  // Every file is checked before any runs, so that a mistake in a later one
+  // is found before an earlier one has done anything.
+  for (const p of paths) {
+    for (const check of beforeRun) {
+      const checkArgs = beforeRunArgs(check, p)
+      if (debug) core.info(`Command: ${binary} ${checkArgs.join(' ')}`)
+      await exec.exec(binary, checkArgs, { cwd, env })
+    }
+  }
+
+  // probe options are passed through verbatim, split on whitespace.
+  const args = options.trim().length > 0 ? options.trim().split(/\s+/) : []
+
+  for (const p of paths) {
     if (debug) {
       core.info(`Running probe with workflow: ${p}`)
       core.info(`Command: FORCE_COLOR=1 ${binary} ${[...args, p].join(' ')}`)
     }
 
-    await exec.exec(binary, [...args, p], {
-      cwd,
-      env: { ...process.env, FORCE_COLOR: '1' },
-    })
+    await exec.exec(binary, [...args, p], { cwd, env })
 
     // Blank line between multiple workflow executions for clarity.
     if (paths.length > 1) core.info('')

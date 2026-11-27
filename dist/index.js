@@ -50934,15 +50934,16 @@ async function run() {
     const pathInput = core.getInput('path');
     const pathsInput = core.getInput('paths');
     const versionInput = core.getInput('version') || 'latest';
+    const beforeRunInput = core.getInput('before-run');
     const options = core.getInput('options');
     const workdir = core.getInput('workdir');
     const installOnly = (0, resolve_version_1.normalizeBool)(core.getInput('install-only'));
     const debug = (0, resolve_version_1.normalizeBool)(core.getInput('action-debug'));
     const cacheEnabled = core.getInput('cache') !== 'false';
     const token = core.getInput('github-token') || process.env.GITHUB_TOKEN;
-    // Determine the workflow files to run.
     const paths = (0, run_1.parsePaths)(pathInput, pathsInput);
-    (0, run_1.checkMode)(paths, installOnly);
+    const beforeRun = (0, run_1.parseBeforeRun)(beforeRunInput);
+    (0, run_1.checkMode)(paths, beforeRun, installOnly);
     const platform = (0, run_1.detectPlatform)();
     if (debug)
         core.info(`Detected platform: ${platform.os}_${platform.arch}`);
@@ -50993,21 +50994,31 @@ async function run() {
     }
     if (debug && workdir)
         core.info(`Changed to working directory: ${cwd}`);
-    // probe options are passed through verbatim, split on whitespace.
-    const args = options.trim().length > 0 ? options.trim().split(/\s+/) : [];
     for (const p of paths) {
         const workflow = path.isAbsolute(p) ? p : path.join(cwd, p);
         if (!fs.existsSync(workflow)) {
             throw new Error(`Workflow file not found: ${p}`);
         }
+    }
+    const env = { ...process.env, FORCE_COLOR: '1' };
+    // Every file is checked before any runs, so that a mistake in a later one
+    // is found before an earlier one has done anything.
+    for (const p of paths) {
+        for (const check of beforeRun) {
+            const checkArgs = (0, run_1.beforeRunArgs)(check, p);
+            if (debug)
+                core.info(`Command: ${binary} ${checkArgs.join(' ')}`);
+            await exec.exec(binary, checkArgs, { cwd, env });
+        }
+    }
+    // probe options are passed through verbatim, split on whitespace.
+    const args = options.trim().length > 0 ? options.trim().split(/\s+/) : [];
+    for (const p of paths) {
         if (debug) {
             core.info(`Running probe with workflow: ${p}`);
             core.info(`Command: FORCE_COLOR=1 ${binary} ${[...args, p].join(' ')}`);
         }
-        await exec.exec(binary, [...args, p], {
-            cwd,
-            env: { ...process.env, FORCE_COLOR: '1' },
-        });
+        await exec.exec(binary, [...args, p], { cwd, env });
         // Blank line between multiple workflow executions for clarity.
         if (paths.length > 1)
             core.info('');
@@ -51173,6 +51184,8 @@ exports.sha256File = sha256File;
 exports.verifyChecksum = verifyChecksum;
 exports.ensureProbeBinary = ensureProbeBinary;
 exports.checkMode = checkMode;
+exports.parseBeforeRun = parseBeforeRun;
+exports.beforeRunArgs = beforeRunArgs;
 exports.parsePaths = parsePaths;
 const crypto = __importStar(__nccwpck_require__(77598));
 const fs = __importStar(__nccwpck_require__(73024));
@@ -51320,13 +51333,39 @@ async function ensureProbeBinary(opts) {
 // or, with install-only, install probe and run nothing. A missing path is an
 // error rather than an install, so that a job meant to run a workflow never
 // passes having run none.
-function checkMode(paths, installOnly) {
-    if (installOnly && paths.length > 0) {
-        throw new Error("'install-only' cannot be used with 'path' or 'paths'");
+function checkMode(paths, beforeRun, installOnly) {
+    if (installOnly && (paths.length > 0 || beforeRun.length > 0)) {
+        throw new Error("'install-only' cannot be used with 'path', 'paths' or 'before-run'");
     }
     if (!installOnly && paths.length === 0) {
         throw new Error("Either 'path' or 'paths' input must be provided");
     }
+}
+// fmt only checks, since a CI run that rewrote the file would pass without
+// anyone seeing the change.
+const BEFORE_RUN_ARGS = {
+    check: ['check'],
+    fmt: ['fmt', '--check'],
+};
+function isBeforeRunCheck(name) {
+    return Object.hasOwn(BEFORE_RUN_ARGS, name);
+}
+// Parse the before-run input, names separated by newlines or commas, into the
+// checks to run on each workflow file before running it.
+function parseBeforeRun(input) {
+    const names = input
+        .split(/[\r\n,]+/)
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0);
+    for (const name of names) {
+        if (!isBeforeRunCheck(name)) {
+            throw new Error(`Unknown 'before-run' value: ${name} (supported: ${Object.keys(BEFORE_RUN_ARGS).join(', ')})`);
+        }
+    }
+    return names;
+}
+function beforeRunArgs(check, workflow) {
+    return [...BEFORE_RUN_ARGS[check], workflow];
 }
 // Parse the path/paths inputs into a clean list of workflow file paths.
 // GitHub Actions passes multiline strings verbatim, so "paths" may contain
