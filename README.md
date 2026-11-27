@@ -60,7 +60,8 @@ Inputs
 | `path` | Path to the probe workflow YAML file | No* | - |
 | `paths` | Multiple paths to workflow YAML files (newline-separated multiline string) | No* | - |
 | `version` | Version of probe to use (a release tag such as `v1.38.1`, or `latest`; a bare `1.38.1` is normalized to `v1.38.1`) | No | `latest` |
-| `options` | Command line options for probe (e.g., "--verbose --rt") | No | `` |
+| `before-run` | Checks to run on each workflow file before running any of them, separated by newlines or commas: `check`, `fmt` | No | - |
+| `options` | Command line options for probe when running the workflows (e.g., "--verbose --rt") | No | `` |
 | `workdir` | Working directory to change to before running probe | No | `` |
 | `install-only` | Install probe and add it to `PATH` without running a workflow (true/false/yes/1) | No | `false` |
 | `action-debug` | Enable action debug output (true/false/yes/1) | No | `false` |
@@ -76,10 +77,35 @@ Outputs
 |--------|-------------|
 | `probe-path` | Absolute path of the probe binary this action installed |
 
+Checking Workflows Before Running
+--
+
+`before-run` checks each workflow file of `path` or `paths` before running any of them:
+
+| Value | Runs |
+|-------|------|
+| `check` | `probe check <file>`, which finds what is wrong or weak in the workflow without running it |
+| `fmt` | `probe fmt --check <file>`, which fails when the file is not laid out the way `probe fmt` writes it, and changes nothing |
+
+The checks run in the order given, and the step fails at the first that fails, before any workflow runs. `options` applies only to running the workflows. `check` and `fmt` need a version of probe that has them, such as `v1.44.0`:
+
+```yaml
+- uses: mozership/probe-action@v1.4.1
+  with:
+    version: v1.44.0
+    path: tests/api-test.yml
+    before-run: |
+      check
+      fmt
+    options: --report github-summary
+```
+
+The values can also be given on one line, as `before-run: check, fmt`. For any other subcommand, use `install-only`, or run `probe` in a later step: it is on `PATH` after the action has run.
+
 Installing Probe Only
 --
 
-With `install-only`, the action downloads and verifies probe, adds it to `PATH`, and runs no workflow. Later steps of the job run probe themselves, which is how to use a subcommand such as `probe check` or `probe manifest`:
+With `install-only`, the action downloads and verifies probe, adds it to `PATH`, and runs no workflow. Later steps of the job run probe themselves:
 
 ```yaml
 - uses: mozership/probe-action@v1.4.1
@@ -90,7 +116,7 @@ With `install-only`, the action downloads and verifies probe, adds it to `PATH`,
 - run: probe check tests/api-test.yml
 ```
 
-`install-only` cannot be combined with `path` or `paths`. The binary is also on `PATH`, and in the `probe-path` output, after a run that executes workflows.
+`install-only` cannot be combined with `path`, `paths` or `before-run`. The binary is also on `PATH`, and in the `probe-path` output, after a run that executes workflows.
 
 Sample Probe Workflow
 --

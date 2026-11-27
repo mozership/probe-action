@@ -94,6 +94,36 @@ jobs:
         env:
           PROBE_PATH: ${{ steps.probe.outputs.probe-path }}
 
+  test-before-run:
+    name: Test Before Run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/serve
+
+      - name: Check workflows before running them
+        uses: ./
+        with:
+          version: v1.44.0
+          paths: |
+            test/basic-http.yml
+            test/status-check.yml
+          before-run: check
+
+      - name: Fail on a workflow that is not formatted
+        id: unformatted
+        continue-on-error: true
+        uses: ./
+        with:
+          version: v1.44.0
+          path: test/basic-http.yml
+          before-run: check, fmt
+
+      - name: Check the step failed
+        run: test "$OUTCOME" = failure
+        env:
+          OUTCOME: ${{ steps.unformatted.outcome }}
+
   test-platforms:
     name: Test Cross-Platform
     runs-on: ${{ matrix.os }}
